@@ -1,0 +1,9 @@
+build/
+.vscode/
+*.exe
+*.o
+*.obj
+relatorio/*.aux
+relatorio/*.log
+relatorio/*.out
+relatorio/*.toc
