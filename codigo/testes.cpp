@@ -5,6 +5,7 @@
 // (assim o 'ctest' do CMake tambem percebe o erro).
 #include "Tabuleiro.h"
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 // Contadores globais do resultado dos testes.
@@ -167,14 +168,79 @@ void testeAplicarMovimento() {
     destruirTabuleiro(u);
 }
 
+// Confere se o tabuleiro e uma configuracao "legal": cada valor de 0 a n*n-1
+// aparece exatamente uma vez (ou seja, todas as pecas, exceto a retirada,
+// aparecem uma unica vez e ha um unico espaco vazio), e o campo 'vazio'
+// aponta mesmo para o espaco vazio.
+bool configuracaoValida(const Tabuleiro &t) {
+    int total = t.n * t.n;
+    int *contagem = new int[total];
+    for (int v = 0; v < total; v++) {
+        contagem[v] = 0;
+    }
+    bool ok = true;
+    for (int i = 0; i < total; i++) {
+        int v = t.pecas[i];
+        if (v < 0 || v >= total) {
+            ok = false;                // valor fora do esperado
+        } else {
+            contagem[v]++;
+        }
+    }
+    for (int v = 0; v < total; v++) {
+        if (contagem[v] != 1) {
+            ok = false;                // faltou ou repetiu algum valor
+        }
+    }
+    if (t.pecas[t.vazio] != VAZIO) {
+        ok = false;
+    }
+    delete[] contagem;
+    return ok;
+}
+
+void testeEmbaralhar() {
+    cout << "== Embaralhar ==\n";
+    for (int n = 2; n <= 6; n++) {
+        Tabuleiro t;
+        criarTabuleiro(t, n);
+        int feitos = embaralhar(t, 50);
+        verificar(feitos >= 50, "deve fazer pelo menos a quantidade pedida");
+        verificar(!estaResolvido(t), "depois de embaralhar nao pode estar resolvido");
+        verificar(configuracaoValida(t), "cada peca uma vez e um unico vazio");
+        destruirTabuleiro(t);
+    }
+
+    // Mesmo pedindo 0 movimentos, um tabuleiro resolvido sai embaralhado.
+    Tabuleiro r;
+    criarTabuleiro(r, 3);
+    int feitos = embaralhar(r, 0);
+    verificar(feitos > 0, "pedindo 0 em tabuleiro resolvido, ainda mexe");
+    verificar(!estaResolvido(r), "e termina fora do estado resolvido");
+    destruirTabuleiro(r);
+
+    // No 2x2 o vazio so tem 2 vizinhos; sem desfazer, sobra 1 opcao por vez.
+    // Repetir varias vezes garante que nunca trava nem fica resolvido.
+    for (int vez = 0; vez < 20; vez++) {
+        Tabuleiro p;
+        criarTabuleiro(p, 2);
+        embaralhar(p, 12 + vez);
+        verificar(!estaResolvido(p), "2x2 embaralhado nao fica resolvido");
+        verificar(configuracaoValida(p), "2x2 continua com pecas validas");
+        destruirTabuleiro(p);
+    }
+}
+
 int main() {
-    cout << "Executando testes da Etapa 1 (Tabuleiro e movimentos)\n\n";
+    cout << "Executando testes do Tabuleiro (movimentos e embaralhar)\n\n";
+    srand(12345);   // semente fixa: os testes sorteiam sempre a mesma coisa
 
     testeEstadoResolvido();
     testeMovimentoCentro();
     testeMovimentoBorda();
     testeMovimentoCanto();
     testeAplicarMovimento();
+    testeEmbaralhar();
 
     cout << "\n------------------------------------------\n";
     cout << "Verificacoes: " << totalVerificacoes

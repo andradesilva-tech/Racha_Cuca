@@ -1,6 +1,7 @@
 // Tabuleiro.cpp
 #include "Tabuleiro.h"
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 // Funcao auxiliar: diz se os indices i e j sao vizinhos ortogonais (lado a
@@ -44,7 +45,7 @@ void criarTabuleiroComEstado(Tabuleiro &t, int n, const int valores[]) {
 
 void destruirTabuleiro(Tabuleiro &t) {
     delete[] t.pecas;
-    t.pecas = 0;                       // ponteiro nulo (evita uso indevido)
+    t.pecas = NULL;                    // ponteiro nulo (evita uso indevido)
     t.n = 0;
     t.vazio = 0;
 }
@@ -130,4 +131,34 @@ void imprimirTabuleiro(const Tabuleiro &t) {
         }
         cout << "\n";
     }
+}
+
+int embaralhar(Tabuleiro &t, int quantidade) {
+    int ultimaMovida = VAZIO;          // ultima peca movida (comeca com "nenhuma")
+    int feitos = 0;
+
+    // Continua enquanto nao fez a quantidade pedida OU se caiu no resolvido.
+    while (feitos < quantidade || estaResolvido(t)) {
+        int movimentos[4];
+        int qtd = movimentosValidos(t, movimentos);
+
+        // Separa as opcoes, tirando a peca que acabou de ser movida (mover ela
+        // de novo so desfaria o passo anterior).
+        int opcoes[4];
+        int qtdOpcoes = 0;
+        for (int i = 0; i < qtd; i++) {
+            if (movimentos[i] != ultimaMovida) {
+                opcoes[qtdOpcoes] = movimentos[i];
+                qtdOpcoes++;
+            }
+        }
+
+        // Sorteia uma das opcoes. Sempre sobra pelo menos uma, porque o vazio
+        // tem no minimo 2 vizinhos (no canto) e so tiramos 1.
+        int escolhida = opcoes[rand() % qtdOpcoes];
+        aplicarMovimento(t, escolhida);
+        ultimaMovida = escolhida;
+        feitos++;
+    }
+    return feitos;
 }

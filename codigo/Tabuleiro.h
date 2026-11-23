@@ -46,4 +46,12 @@ bool estaResolvido(const Tabuleiro &t);
 // Imprime o tabuleiro no terminal (o espaco vazio aparece em branco).
 void imprimirTabuleiro(const Tabuleiro &t);
 
+// Embaralha o tabuleiro fazendo 'quantidade' movimentos ALEATORIOS e VALIDOS a
+// partir do estado atual. Nunca desfaz na hora o movimento anterior (senao o
+// sorteio "anda e volta" e embaralha pouco). Como so usa movimentos validos,
+// o resultado SEMPRE tem solucao. Se terminar no estado resolvido, continua
+// mexendo ate sair dele. Devolve quantos movimentos fez de fato.
+// Chame srand(...) uma vez antes (no main) para o sorteio mudar a cada execucao.
+int embaralhar(Tabuleiro &t, int quantidade);
+
 #endif
