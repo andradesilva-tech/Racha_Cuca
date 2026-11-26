@@ -14,16 +14,17 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Tipo de build" FORCE)
 endif()
 
-# --- Biblioteca com a logica do nucleo (sem depender de imagem) ---
-# Tabuleiro, estruturas de dados (Fila, Pilha, Tabela Hash, Lista ordenada)
-# e o Solucionador. A Imagem entra numa proxima etapa.
+# --- Biblioteca com a logica do projeto ---
+# Tabuleiro, estruturas de dados (Fila, Pilha, Tabela Hash, Lista ordenada),
+# Solucionador e Imagem (PPM).
 add_library(nucleo
     Tabuleiro.cpp
     Fila.cpp
     Pilha.cpp
     TabelaHash.cpp
     ListaOrdenada.cpp
-    Solucionador.cpp)
+    Solucionador.cpp
+    Imagem.cpp)
 target_include_directories(nucleo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # --- Executavel principal do simulador ---
@@ -49,6 +50,9 @@ target_link_libraries(testes_lista PRIVATE nucleo)
 add_executable(testes_solucionador testes_solucionador.cpp)
 target_link_libraries(testes_solucionador PRIVATE nucleo)
 
+add_executable(testes_imagem testes_imagem.cpp)
+target_link_libraries(testes_imagem PRIVATE nucleo)
+
 # Integracao com CTest: 'ctest' na pasta de build executa todos.
 enable_testing()
 add_test(NAME tabuleiro      COMMAND testes)
@@ -57,3 +61,4 @@ add_test(NAME pilha          COMMAND testes_pilha)
 add_test(NAME tabela_hash    COMMAND testes_hash)
 add_test(NAME lista_ordenada COMMAND testes_lista)
 add_test(NAME solucionador   COMMAND testes_solucionador)
+add_test(NAME imagem         COMMAND testes_imagem)
