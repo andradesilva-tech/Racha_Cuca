@@ -3,44 +3,15 @@
 #include "Tabuleiro.h"
 #include "Solucionador.h"
 #include "Imagem.h"
+#include "Entrada.h"
 #include <iostream>
 #include <string>
 #include <cstdlib>
 #include <ctime>
 using namespace std;
 
-const int N_MINIMO = 2;
-const int N_MAXIMO = 6;
-
 const char *ARQUIVO_INICIAL = "estado_inicial.ppm";
 const char *ARQUIVO_FINAL = "estado_final.ppm";
-
-// Converte texto em inteiro. Devolve false se tiver algo que nao seja digito
-// (ex.: "abc", "3.5", "4x") ou se tiver mais de 9 digitos.
-bool textoParaInteiro(const string &texto, int &numero) {
-    int inicio = 0;
-    bool negativo = false;
-    if (texto.size() > 0 && texto[0] == '-') {
-        negativo = true;
-        inicio = 1;
-    }
-    int qtdDigitos = (int)texto.size() - inicio;
-    if (qtdDigitos < 1 || qtdDigitos > 9) {
-        return false;
-    }
-    numero = 0;
-    for (int i = inicio; i < (int)texto.size(); i++) {
-        char c = texto[i];
-        if (c < '0' || c > '9') {
-            return false;
-        }
-        numero = numero * 10 + (c - '0');
-    }
-    if (negativo) {
-        numero = -numero;
-    }
-    return true;
-}
 
 // Pergunta N ate receber um valor valido. Devolve -1 se a entrada acabar.
 int lerN() {
@@ -52,10 +23,10 @@ int lerN() {
             return -1;
         }
         int n;
-        if (!textoParaInteiro(entrada, n)) {
+        if (!textoParaInteiro(entrada.c_str(), n)) {
             cout << "Entrada invalida: \"" << entrada
                  << "\" nao e um numero inteiro. Tente de novo.\n";
-        } else if (n < N_MINIMO || n > N_MAXIMO) {
+        } else if (!nAceito(n)) {
             cout << "Valor nao aceito: N = " << n << ". O programa aceita N de "
                  << N_MINIMO << " a " << N_MAXIMO << ". Tente de novo.\n";
         } else {

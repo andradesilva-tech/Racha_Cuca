@@ -16,7 +16,7 @@ endif()
 
 # --- Biblioteca com a logica do projeto ---
 # Tabuleiro, estruturas de dados (Fila, Pilha, Tabela Hash, Lista ordenada),
-# Solucionador e Imagem (PPM).
+# Solucionador, Imagem (PPM) e validacao da entrada.
 add_library(nucleo
     Tabuleiro.cpp
     Fila.cpp
@@ -24,7 +24,8 @@ add_library(nucleo
     TabelaHash.cpp
     ListaOrdenada.cpp
     Solucionador.cpp
-    Imagem.cpp)
+    Imagem.cpp
+    Entrada.cpp)
 target_include_directories(nucleo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # --- Executavel principal do simulador ---
@@ -53,6 +54,12 @@ target_link_libraries(testes_solucionador PRIVATE nucleo)
 add_executable(testes_imagem testes_imagem.cpp)
 target_link_libraries(testes_imagem PRIVATE nucleo)
 
+add_executable(testes_entrada testes_entrada.cpp)
+target_link_libraries(testes_entrada PRIVATE nucleo)
+
+add_executable(testes_integracao testes_integracao.cpp)
+target_link_libraries(testes_integracao PRIVATE nucleo)
+
 # Integracao com CTest: 'ctest' na pasta de build executa todos.
 enable_testing()
 add_test(NAME tabuleiro      COMMAND testes)
@@ -62,3 +69,5 @@ add_test(NAME tabela_hash    COMMAND testes_hash)
 add_test(NAME lista_ordenada COMMAND testes_lista)
 add_test(NAME solucionador   COMMAND testes_solucionador)
 add_test(NAME imagem         COMMAND testes_imagem)
+add_test(NAME entrada        COMMAND testes_entrada)
+add_test(NAME integracao     COMMAND testes_integracao)
