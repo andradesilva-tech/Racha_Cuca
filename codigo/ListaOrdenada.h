@@ -1,48 +1,31 @@
-// ListaOrdenada.h
-// Lista DINAMICA, DUPLAMENTE ENCADEADA e ORDENADA de pares (prioridade, valor).
-// Os elementos ficam sempre em ordem CRESCENTE de prioridade: o de menor
-// prioridade fica no inicio.
-//
-// No projeto, e usada pelo A*: a prioridade e "quanto parece faltar" para
-// resolver, e o A* sempre continua pelo estado mais promissor (o primeiro).
-//
-// Por que DUPLAMENTE encadeada? Para poder procurar o lugar de um novo
-// elemento tanto a partir do inicio quanto a partir do FIM. No A*, os
-// elementos novos quase sempre vao parar perto de uma das pontas, entao a
-// insercao fica muito rapida (sem percorrer a lista inteira).
+// Lista duplamente encadeada de pares (prioridade, valor), sempre em ordem
+// crescente de prioridade. Usada pelo A*: o primeiro e o estado mais promissor.
+// Ser duplamente encadeada permite procurar o lugar do novo a partir do fim;
+// no A* ele quase sempre fica perto de uma das pontas, entao inserir e rapido.
 #ifndef LISTAORDENADA_H
 #define LISTAORDENADA_H
 
 struct NoLista {
     int prioridade;
     int valor;
-    NoLista *ant;     // elemento anterior (de prioridade menor ou igual)
-    NoLista *prox;    // proximo elemento (de prioridade maior ou igual)
+    NoLista *ant;
+    NoLista *prox;
 };
 
 struct ListaOrdenada {
-    NoLista *inicio;  // elemento de MENOR prioridade
-    NoLista *fim;     // elemento de MAIOR prioridade
+    NoLista *inicio;  // menor prioridade
+    NoLista *fim;     // maior prioridade
     int tamanho;
 };
 
-// Deixa a lista pronta para uso (vazia).
 void criarLista(ListaOrdenada &l);
-
-// true se a lista nao tem nenhum elemento.
 bool listaVazia(const ListaOrdenada &l);
 
-// Insere o par na posicao certa, mantendo a lista ordenada.
-// Empates: se a prioridade e menor OU IGUAL a do primeiro elemento, o novo
-// entra no comeco (na frente dos iguais). Nos outros casos, o novo entra
-// DEPOIS dos que ja tem a mesma prioridade.
+// Empate com o primeiro: o novo entra na frente dele.
+// Qualquer outro empate: o novo entra depois dos iguais.
 void inserirOrdenado(ListaOrdenada &l, int prioridade, int valor);
 
-// Tira o PRIMEIRO elemento (o de menor prioridade) e devolve seus dados.
-// Devolve false se a lista estiver vazia.
-bool removerPrimeiro(ListaOrdenada &l, int &prioridade, int &valor);
-
-// Remove todos os elementos e libera a memoria.
+bool removerPrimeiro(ListaOrdenada &l, int &prioridade, int &valor);   // false se vazia
 void liberarLista(ListaOrdenada &l);
 
 #endif

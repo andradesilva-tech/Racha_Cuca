@@ -1,7 +1,5 @@
-// testes_solucionador.cpp
-// Testa as estrategias de solucao: BFS (N = 2 e 3), A* (N = 4) e camadas
-// (N = 5 e 6). Para cada solucao, confere que TODOS os movimentos sao validos
-// e que, no fim, o tabuleiro fica reconstruido (estado resolvido).
+// Testes das estrategias de solucao: todo movimento tem que ser valido e o
+// tabuleiro tem que terminar resolvido.
 #include "Tabuleiro.h"
 #include "Solucionador.h"
 #include <iostream>
@@ -19,19 +17,18 @@ void verificar(bool condicao, const char *descricao) {
     }
 }
 
-// Aplica a solucao numa COPIA do tabuleiro: todo movimento precisa ser valido
-// e o tabuleiro precisa terminar resolvido.
+// Aplica a solucao numa copia, para nao alterar o tabuleiro original.
 bool solucaoValida(const Tabuleiro &inicial, const Solucao &s) {
     Tabuleiro copia;
     criarTabuleiroComEstado(copia, inicial.n, inicial.pecas);
     bool ok = true;
     for (int i = 0; i < s.quantidade && ok; i++) {
         if (!aplicarMovimento(copia, s.movimentos[i])) {
-            ok = false;                        // movimento invalido
+            ok = false;
         }
     }
     if (ok && !estaResolvido(copia)) {
-        ok = false;                            // nao chegou na solucao
+        ok = false;
     }
     destruirTabuleiro(copia);
     return ok;

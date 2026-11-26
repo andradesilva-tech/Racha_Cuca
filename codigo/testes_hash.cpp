@@ -1,5 +1,4 @@
-// testes_hash.cpp
-// Testa a Tabela Hash SOZINHA (sem tabuleiro e sem solucionador).
+// Testes da Tabela Hash, isolada do resto do projeto.
 #include "TabelaHash.h"
 #include <iostream>
 using namespace std;

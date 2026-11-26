@@ -1,44 +1,30 @@
-// TabelaHash.h
-// Tabela hash que guarda pares (chave -> valor).
-//   chave: um numero inteiro grande (unsigned long long). No projeto, e o
-//          estado do tabuleiro "codificado" num unico numero.
-//   valor: um inteiro. No projeto, e a posicao do estado no vetor de nos da busca.
-//
-// Funcao hash: metodo da DIVISAO -> posicao = chave % tamanho.
-// Colisoes (duas chaves caindo na mesma posicao): tratadas por ENCADEAMENTO,
-// ou seja, cada posicao da tabela guarda uma lista encadeada de pares.
-//
-// Serve para responder rapido: "eu ja vi esse estado antes?".
+// Tabela hash (chave -> valor) que responde rapido "ja vi esse estado?".
+//   chave: o tabuleiro codificado num numero
+//   valor: posicao desse estado no vetor de nos da busca
+// Funcao hash pelo metodo da divisao (chave % tamanho). Colisoes tratadas
+// por encadeamento: cada posicao guarda uma lista dos pares que cairam nela.
 #ifndef TABELAHASH_H
 #define TABELAHASH_H
 
 struct NoHash {
     unsigned long long chave;
     int valor;
-    NoHash *prox;     // proximo par que caiu na mesma posicao
+    NoHash *prox;
 };
 
 struct TabelaHash {
-    NoHash **posicoes;  // vetor de ponteiros: cada posicao e o inicio de uma lista
-    int tamanho;        // quantidade de posicoes do vetor (de preferencia um primo)
-    int quantidade;     // quantos pares estao guardados no total
+    NoHash **posicoes;  // cada posicao e o inicio de uma lista
+    int tamanho;        // de preferencia primo, para espalhar melhor as chaves
+    int quantidade;
 };
 
-// Cria a tabela com 'tamanho' posicoes, todas vazias.
 void criarTabelaHash(TabelaHash &h, int tamanho);
-
-// Calcula em qual posicao (de 0 ate tamanho-1) a chave deve ficar.
 int funcaoHash(const TabelaHash &h, unsigned long long chave);
 
-// Guarda o par (chave -> valor). Devolve false se a chave JA existia
-// (nesse caso nada muda: a tabela nao guarda chaves repetidas).
+// Nao guarda chave repetida: devolve false se ela ja existia.
 bool inserirHash(TabelaHash &h, unsigned long long chave, int valor);
 
-// Procura a chave. Se achar, coloca o valor em 'valor' e devolve true.
-// Se nao achar, devolve false.
 bool buscarHash(const TabelaHash &h, unsigned long long chave, int &valor);
-
-// Libera toda a memoria da tabela.
 void liberarTabelaHash(TabelaHash &h);
 
 #endif

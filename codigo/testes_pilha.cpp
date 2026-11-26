@@ -1,5 +1,4 @@
-// testes_pilha.cpp
-// Testa a Pilha SOZINHA (sem tabuleiro e sem solucionador).
+// Testes da Pilha, isolada do resto do projeto.
 #include "Pilha.h"
 #include <iostream>
 using namespace std;
@@ -48,11 +47,9 @@ void testeOrdemLIFO() {
 
 void testeInverterSequencia() {
     cout << "== Inverter uma sequencia (como na montagem da solucao) ==\n";
-    // A busca descobre os movimentos do FIM para o COMECO. Empilhando e
-    // desempilhando, eles saem na ordem certa. E exatamente o que este
-    // teste confere.
-    int descobertos[5] = {50, 40, 30, 20, 10};   // ordem em que foram achados
-    int esperados[5]   = {10, 20, 30, 40, 50};   // ordem certa de execucao
+    // Mesmo uso do montarCaminho: entra do fim para o comeco, sai na ordem certa.
+    int descobertos[5] = {50, 40, 30, 20, 10};
+    int esperados[5]   = {10, 20, 30, 40, 50};
     Pilha p;
     criarPilha(p);
     for (int i = 0; i < 5; i++) {

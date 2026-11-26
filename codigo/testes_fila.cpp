@@ -1,5 +1,4 @@
-// testes_fila.cpp
-// Testa a Fila SOZINHA (sem tabuleiro e sem solucionador).
+// Testes da Fila, isolada do resto do projeto.
 #include "Fila.h"
 #include <iostream>
 using namespace std;

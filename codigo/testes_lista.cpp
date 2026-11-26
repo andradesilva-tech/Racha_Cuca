@@ -1,5 +1,4 @@
-// testes_lista.cpp
-// Testa a Lista ordenada SOZINHA (sem tabuleiro e sem solucionador).
+// Testes da Lista ordenada, isolada do resto do projeto.
 #include "ListaOrdenada.h"
 #include <iostream>
 #include <cstdlib>
@@ -31,7 +30,6 @@ void testeOrdenacao() {
     cout << "== Sai em ordem crescente de prioridade ==\n";
     ListaOrdenada l;
     criarLista(l);
-    // Insere fora de ordem.
     inserirOrdenado(l, 5, 50);
     inserirOrdenado(l, 1, 10);
     inserirOrdenado(l, 3, 30);
@@ -49,26 +47,25 @@ void testeOrdenacao() {
     liberarLista(l);
 }
 
-// Confere as ligacoes da lista duplamente encadeada: andando pelo 'prox' a
-// partir do inicio e pelo 'ant' a partir do fim, os dois caminhos precisam
-// contar 'tamanho' elementos, e as prioridades precisam estar em ordem.
+// Percorre pelo 'prox' e pelo 'ant': os dois sentidos tem que contar
+// 'tamanho' elementos, com 'ant' e 'fim' certos e prioridades em ordem.
 bool ligacoesConsistentes(const ListaOrdenada &l) {
     int contaFrente = 0;
     NoLista *atual = l.inicio;
     NoLista *anterior = NULL;
     while (atual != NULL) {
         if (atual->ant != anterior) {
-            return false;                  // ponteiro 'ant' errado
+            return false;
         }
         if (anterior != NULL && anterior->prioridade > atual->prioridade) {
-            return false;                  // fora de ordem
+            return false;
         }
         contaFrente++;
         anterior = atual;
         atual = atual->prox;
     }
     if (anterior != l.fim) {
-        return false;                      // 'fim' nao aponta para o ultimo
+        return false;
     }
     int contaTras = 0;
     atual = l.fim;
@@ -83,23 +80,23 @@ void testeEmpates() {
     cout << "== Empates ==\n";
     int p, v;
 
-    // Empate com o PRIMEIRO da lista: o novo entra na frente.
+    // Empate com o primeiro: o novo entra na frente.
     ListaOrdenada a;
     criarLista(a);
     inserirOrdenado(a, 2, 1);
-    inserirOrdenado(a, 2, 2);       // empata com o primeiro -> vai para o comeco
+    inserirOrdenado(a, 2, 2);
     verificar(removerPrimeiro(a, p, v) && v == 2, "empate com o primeiro: o mais novo sai antes");
     verificar(removerPrimeiro(a, p, v) && v == 1, "... e depois o mais antigo");
     liberarLista(a);
 
-    // Empate no meio ou no fim: o novo entra DEPOIS dos iguais.
+    // Empate no meio ou no fim: o novo entra depois dos iguais.
     ListaOrdenada b;
     criarLista(b);
     inserirOrdenado(b, 1, 10);
     inserirOrdenado(b, 5, 51);
     inserirOrdenado(b, 9, 90);
-    inserirOrdenado(b, 5, 52);      // empata com o 51 (no meio) -> vai depois dele
-    inserirOrdenado(b, 9, 91);      // empata com o 90 (o ultimo) -> vai para o fim
+    inserirOrdenado(b, 5, 52);      // empata no meio
+    inserirOrdenado(b, 9, 91);      // empata no fim
     verificar(ligacoesConsistentes(b), "ligacoes certas depois dos empates");
     int esperados[5] = {10, 51, 52, 90, 91};
     bool ordemCerta = true;
@@ -118,14 +115,13 @@ void testeAleatorio() {
     ListaOrdenada l;
     criarLista(l);
 
-    // Fase 1: 3000 prioridades sorteadas (com muitos empates: so 0 a 49).
+    // Prioridades so de 0 a 49, para forcar muitos empates.
     for (int i = 0; i < 3000; i++) {
         inserirOrdenado(l, rand() % 50, i);
     }
     verificar(l.tamanho == 3000, "fase 1: 3000 elementos");
     verificar(ligacoesConsistentes(l), "fase 1: ligacoes e ordem corretas");
 
-    // Fase 2: tira 1000; precisam sair em ordem nao decrescente.
     bool emOrdem = true;
     int p, v, ultima = -1;
     for (int i = 0; i < 1000; i++) {
@@ -137,7 +133,6 @@ void testeAleatorio() {
     verificar(emOrdem, "fase 2: 1000 removidos em ordem");
     verificar(ligacoesConsistentes(l), "fase 2: ligacoes certas apos remover");
 
-    // Fase 3: mais 3000 sorteadas e esvazia tudo, conferindo a ordem.
     for (int i = 0; i < 3000; i++) {
         inserirOrdenado(l, rand() % 50, i);
     }
@@ -156,7 +151,6 @@ void testeAleatorio() {
     verificar(emOrdem && removidos == 5000, "fase 3: todos saem em ordem, nenhum perdido");
     verificar(l.inicio == NULL && l.fim == NULL, "lista vazia: inicio e fim nulos");
 
-    // Reusar depois de esvaziar.
     inserirOrdenado(l, 3, 33);
     verificar(l.inicio == l.fim && l.tamanho == 1, "reusar lista vazia: 1 elemento");
     liberarLista(l);

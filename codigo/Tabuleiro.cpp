@@ -1,22 +1,20 @@
-// Tabuleiro.cpp
 #include "Tabuleiro.h"
 #include <iostream>
 #include <cstdlib>
 using namespace std;
 
-// Funcao auxiliar: diz se os indices i e j sao vizinhos ortogonais (lado a
-// lado) num tabuleiro n x n. Usada so aqui dentro.
+// Diz se as casas i e j estao lado a lado (horizontal ou vertical).
 static bool saoVizinhos(int n, int i, int j) {
     int dif = i - j;
     if (dif < 0) {
-        dif = -dif;            // valor absoluto, feito na mao (sem biblioteca)
+        dif = -dif;
     }
     bool mesmaLinha = (i / n == j / n);
     if (mesmaLinha && dif == 1) {
-        return true;           // vizinhos na horizontal
+        return true;
     }
     if (dif == n) {
-        return true;           // vizinhos na vertical (uma linha de diferenca)
+        return true;           // uma linha acima ou abaixo
     }
     return false;
 }
@@ -25,9 +23,9 @@ void criarTabuleiro(Tabuleiro &t, int n) {
     t.n = n;
     t.pecas = new int[n * n];
     for (int i = 0; i < n * n - 1; i++) {
-        t.pecas[i] = i + 1;            // 1, 2, 3, ...
+        t.pecas[i] = i + 1;
     }
-    t.pecas[n * n - 1] = VAZIO;        // vazio no canto inferior direito
+    t.pecas[n * n - 1] = VAZIO;
     t.vazio = n * n - 1;
 }
 
@@ -38,14 +36,14 @@ void criarTabuleiroComEstado(Tabuleiro &t, int n, const int valores[]) {
     for (int i = 0; i < n * n; i++) {
         t.pecas[i] = valores[i];
         if (valores[i] == VAZIO) {
-            t.vazio = i;               // guarda onde esta o espaco vazio
+            t.vazio = i;
         }
     }
 }
 
 void destruirTabuleiro(Tabuleiro &t) {
     delete[] t.pecas;
-    t.pecas = NULL;                    // ponteiro nulo (evita uso indevido)
+    t.pecas = NULL;
     t.n = 0;
     t.vazio = 0;
 }
@@ -56,23 +54,23 @@ int pecaEm(const Tabuleiro &t, int linha, int coluna) {
 
 int movimentosValidos(const Tabuleiro &t, int movimentos[]) {
     int n = t.n;
-    int linha = t.vazio / n;           // linha do espaco vazio
-    int coluna = t.vazio % n;          // coluna do espaco vazio
+    int linha = t.vazio / n;
+    int coluna = t.vazio % n;
     int qtd = 0;
 
-    if (linha > 0) {                   // ha uma peca acima do vazio
+    if (linha > 0) {                   // peca acima do vazio
         movimentos[qtd] = t.pecas[(linha - 1) * n + coluna];
         qtd++;
     }
-    if (linha < n - 1) {               // ha uma peca abaixo do vazio
+    if (linha < n - 1) {               // abaixo
         movimentos[qtd] = t.pecas[(linha + 1) * n + coluna];
         qtd++;
     }
-    if (coluna > 0) {                  // ha uma peca a esquerda do vazio
+    if (coluna > 0) {                  // a esquerda
         movimentos[qtd] = t.pecas[linha * n + (coluna - 1)];
         qtd++;
     }
-    if (coluna < n - 1) {              // ha uma peca a direita do vazio
+    if (coluna < n - 1) {              // a direita
         movimentos[qtd] = t.pecas[linha * n + (coluna + 1)];
         qtd++;
     }
@@ -81,11 +79,10 @@ int movimentosValidos(const Tabuleiro &t, int movimentos[]) {
 
 bool aplicarMovimento(Tabuleiro &t, int valorPeca) {
     if (valorPeca == VAZIO) {
-        return false;                  // nao se "move" o proprio vazio
+        return false;
     }
     int n = t.n;
 
-    // Procura em que posicao esta a peca pedida.
     int idx = -1;
     for (int i = 0; i < n * n; i++) {
         if (t.pecas[i] == valorPeca) {
@@ -94,13 +91,13 @@ bool aplicarMovimento(Tabuleiro &t, int valorPeca) {
         }
     }
     if (idx == -1) {
-        return false;                  // peca nao existe no tabuleiro
+        return false;
     }
     if (!saoVizinhos(n, idx, t.vazio)) {
-        return false;                  // a peca nao esta ao lado do vazio
+        return false;
     }
 
-    // Desliza a peca para o vazio: troca os dois.
+    // Troca a peca com o vazio.
     t.pecas[t.vazio] = valorPeca;
     t.pecas[idx] = VAZIO;
     t.vazio = idx;
@@ -123,27 +120,25 @@ void imprimirTabuleiro(const Tabuleiro &t) {
         for (int coluna = 0; coluna < n; coluna++) {
             int v = t.pecas[linha * n + coluna];
             if (v == VAZIO) {
-                cout << " ";           // espaco vazio aparece em branco
+                cout << " ";
             } else {
                 cout << v;
             }
-            cout << "\t";              // tabulacao para alinhar as colunas
+            cout << "\t";
         }
         cout << "\n";
     }
 }
 
 int embaralhar(Tabuleiro &t, int quantidade) {
-    int ultimaMovida = VAZIO;          // ultima peca movida (comeca com "nenhuma")
+    int ultimaMovida = VAZIO;          // nenhuma peca movida ainda
     int feitos = 0;
 
-    // Continua enquanto nao fez a quantidade pedida OU se caiu no resolvido.
     while (feitos < quantidade || estaResolvido(t)) {
         int movimentos[4];
         int qtd = movimentosValidos(t, movimentos);
 
-        // Separa as opcoes, tirando a peca que acabou de ser movida (mover ela
-        // de novo so desfaria o passo anterior).
+        // Tira das opcoes a ultima peca movida: mover ela de novo desfaria o passo.
         int opcoes[4];
         int qtdOpcoes = 0;
         for (int i = 0; i < qtd; i++) {
@@ -153,8 +148,7 @@ int embaralhar(Tabuleiro &t, int quantidade) {
             }
         }
 
-        // Sorteia uma das opcoes. Sempre sobra pelo menos uma, porque o vazio
-        // tem no minimo 2 vizinhos (no canto) e so tiramos 1.
+        // Sempre sobra opcao: o vazio tem no minimo 2 vizinhos e so tiramos 1.
         int escolhida = opcoes[rand() % qtdOpcoes];
         aplicarMovimento(t, escolhida);
         ultimaMovida = escolhida;

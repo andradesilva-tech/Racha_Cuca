@@ -1,4 +1,3 @@
-// Solucionador.cpp
 #include "Solucionador.h"
 #include "Fila.h"
 #include "Pilha.h"
@@ -6,18 +5,15 @@
 #include "ListaOrdenada.h"
 #include <cstdlib>
 
-// Tamanhos das tabelas hash (numeros primos espalham melhor as chaves).
-const int TAMANHO_HASH_BFS = 200003;      // N = 3 tem no maximo 181.440 estados
+// Tamanhos primos espalham melhor as chaves na hash.
+const int TAMANHO_HASH_BFS = 200003;      // o 3x3 tem no maximo 181.440 estados
 const int TAMANHO_HASH_AESTRELA = 1000003;
 const int TAMANHO_HASH_CAMADAS = 100003;
 
-// Trava de seguranca do A*: se passar desse numero de estados, desiste
-// (protege a memoria em embaralhamentos muito dificeis).
+// Acima disso o A* desiste, para nao esgotar a memoria.
 const int LIMITE_NOS_AESTRELA = 2000000;
 
-// =========================================================================
-// Solucao (vetor dinamico de movimentos)
-// =========================================================================
+// ---------- Solucao ----------
 
 void criarSolucao(Solucao &s) {
     s.movimentos = NULL;
@@ -27,7 +23,7 @@ void criarSolucao(Solucao &s) {
 
 void adicionarMovimento(Solucao &s, int movimento) {
     if (s.quantidade == s.capacidade) {
-        // Vetor cheio: aloca um com o DOBRO do espaco e copia tudo para ele.
+        // Vetor cheio: aloca o dobro e copia.
         int novaCapacidade;
         if (s.capacidade == 0) {
             novaCapacidade = 16;
@@ -51,19 +47,16 @@ void liberarSolucao(Solucao &s) {
     criarSolucao(s);
 }
 
-// =========================================================================
-// Nos da busca
-// =========================================================================
-// Cada estado descoberto durante a busca vira um "No". Todos ficam guardados
-// num vetor dinamico, e as estruturas (Fila, Lista, Hash) guardam so a
-// POSICAO (indice) do no nesse vetor.
+// ---------- Nos da busca ----------
+// Cada estado descoberto vira um No guardado em VetorNos. Fila, Lista e Hash
+// guardam so o indice do no nesse vetor.
 
 struct No {
-    unsigned long long codigo;  // o estado codificado num numero
-    int g;                      // quantos movimentos desde o inicio
-    int pai;                    // indice do no anterior (-1 = estado inicial)
-    int movimento;              // movimento feito para sair do pai e chegar aqui
-    bool fechado;               // (A*) true quando o no ja foi expandido
+    unsigned long long codigo;  // estado codificado
+    int g;                      // movimentos desde o inicio
+    int pai;                    // indice do no anterior (-1 = inicial)
+    int movimento;              // movimento que levou do pai ate aqui
+    bool fechado;               // A*: ja foi expandido
 };
 
 struct VetorNos {
@@ -78,7 +71,7 @@ static void criarVetorNos(VetorNos &v) {
     v.capacidade = 0;
 }
 
-// Acrescenta um no e devolve a posicao (indice) dele no vetor.
+// Devolve o indice do novo no.
 static int adicionarNo(VetorNos &v, unsigned long long codigo, int g, int pai, int movimento) {
     if (v.quantidade == v.capacidade) {
         int novaCapacidade;
@@ -110,9 +103,8 @@ static void liberarVetorNos(VetorNos &v) {
     criarVetorNos(v);
 }
 
-// Monta a sequencia de movimentos do inicio ate o no 'indice' usando a PILHA.
-// Subindo pelos pais (do fim para o comeco), cada movimento e empilhado.
-// Depois, desempilhando, eles saem na ordem certa (do comeco para o fim).
+// Sobe pelos pais empilhando os movimentos (do fim para o comeco) e
+// desempilha para coloca-los em 's' na ordem certa.
 static void montarCaminho(const VetorNos &v, int indice, Solucao &s) {
     Pilha pilha;
     criarPilha(pilha);
@@ -128,13 +120,10 @@ static void montarCaminho(const VetorNos &v, int indice, Solucao &s) {
     liberarPilha(pilha);
 }
 
-// =========================================================================
-// Codificacao do tabuleiro inteiro num unico numero (usada por BFS e A*)
-// =========================================================================
-// Ideia: ler as pecas em ordem como "digitos" de um numero na base n*n.
+// ---------- Codificacao (BFS e A*) ----------
+// As pecas viram "digitos" de um numero na base n*n.
 // Ex.: N = 2 (base 4), pecas 1 2 3 0 -> 1*64 + 2*16 + 3*4 + 0 = 108.
-// Para N = 4 (16 casas, base 16) o maior codigo ainda cabe num
-// unsigned long long; para N = 5 e 6 nao cabe, por isso BFS e A* so aceitam N <= 4.
+// Ate N = 4 o numero cabe num unsigned long long; N = 5 e 6 nao cabem.
 
 static unsigned long long codificar(const Tabuleiro &t) {
     int total = t.n * t.n;
@@ -145,10 +134,9 @@ static unsigned long long codificar(const Tabuleiro &t) {
     return codigo;
 }
 
-// Faz o caminho inverso: escreve no tabuleiro o estado guardado no codigo.
 static void decodificar(Tabuleiro &t, unsigned long long codigo) {
     int total = t.n * t.n;
-    for (int i = total - 1; i >= 0; i--) {   // o ultimo "digito" e o da ultima casa
+    for (int i = total - 1; i >= 0; i--) {   // o ultimo digito e o da ultima casa
         t.pecas[i] = (int)(codigo % total);
         codigo = codigo / total;
         if (t.pecas[i] == VAZIO) {
@@ -157,21 +145,15 @@ static void decodificar(Tabuleiro &t, unsigned long long codigo) {
     }
 }
 
-// =========================================================================
-// BFS - busca em largura (N = 2 e 3)
-// =========================================================================
-// Visita os estados "por camadas de distancia": primeiro todos a 1 movimento,
-// depois todos a 2, e assim por diante. Por isso, o primeiro estado resolvido
-// encontrado e o de MENOR numero de movimentos.
-//   Fila       -> guarda os estados na ordem em que devem ser visitados
-//   Tabela Hash -> lembra os estados ja vistos (para nao repetir)
-//   Pilha      -> monta a resposta no final (montarCaminho)
+// ---------- BFS (N = 2 e 3) ----------
+// Visita todos os estados a 1 movimento, depois a 2, e assim por diante.
+// Por isso o primeiro estado resolvido encontrado e o de menor caminho.
 
 bool resolverBFS(const Tabuleiro &inicial, Solucao &s) {
     if (inicial.n > 4) {
-        return false;                        // o estado nao cabe no codigo
+        return false;
     }
-    Tabuleiro t;                             // copia de trabalho
+    Tabuleiro t;
     criarTabuleiroComEstado(t, inicial.n, inicial.pecas);
 
     VetorNos v;
@@ -196,7 +178,7 @@ bool resolverBFS(const Tabuleiro &inicial, Solucao &s) {
             int movimentos[4];
             int qtd = movimentosValidos(t, movimentos);
             for (int k = 0; k < qtd; k++) {
-                aplicarMovimento(t, movimentos[k]);          // vai para o vizinho
+                aplicarMovimento(t, movimentos[k]);
                 unsigned long long codigo = codificar(t);
                 int jaVisto;
                 if (!buscarHash(vistos, codigo, jaVisto)) {
@@ -204,7 +186,7 @@ bool resolverBFS(const Tabuleiro &inicial, Solucao &s) {
                     inserirHash(vistos, codigo, novo);
                     enfileirar(fila, novo);
                 }
-                aplicarMovimento(t, movimentos[k]);          // desfaz (volta)
+                aplicarMovimento(t, movimentos[k]);          // desfaz
             }
         }
     }
@@ -216,17 +198,11 @@ bool resolverBFS(const Tabuleiro &inicial, Solucao &s) {
     return achou;
 }
 
-// =========================================================================
-// A* (N = 4)
-// =========================================================================
-// Para cada estado calculamos:
-//   g = movimentos feitos ate aqui
-//   h = estimativa do que falta: soma das distancias de Manhattan
-//       (quantas casas cada peca esta longe do seu lugar, em linha + coluna)
-//   f = g + h
-// A Lista ordenada mantem os estados a explorar em ordem de f; o A* sempre
-// continua pelo primeiro (o mais promissor). Como h nunca exagera o que falta,
-// a solucao encontrada tem o menor numero de movimentos.
+// ---------- A* (N = 4) ----------
+// f = g + h, onde g = movimentos feitos e h = distancia de Manhattan (soma de
+// quantas linhas + colunas cada peca esta longe do seu lugar). O A* sempre
+// expande o de menor f. Como h nunca passa do que realmente falta, a solucao
+// encontrada e a mais curta.
 
 static int distanciaManhattan(const Tabuleiro &t) {
     int n = t.n;
@@ -234,7 +210,7 @@ static int distanciaManhattan(const Tabuleiro &t) {
     for (int i = 0; i < n * n; i++) {
         int valor = t.pecas[i];
         if (valor != VAZIO) {
-            int destino = valor - 1;                 // a peca 'valor' mora no indice valor-1
+            int destino = valor - 1;
             int difLinha = i / n - destino / n;
             if (difLinha < 0) {
                 difLinha = -difLinha;
@@ -249,9 +225,8 @@ static int distanciaManhattan(const Tabuleiro &t) {
     return soma;
 }
 
-// Prioridade na lista: f = g + h. Em empate com o primeiro da lista, a Lista
-// ordenada coloca o estado MAIS NOVO na frente, o que faz o A* "aprofundar"
-// no caminho mais promissor antes de abrir outros com o mesmo f.
+// Em empate com o primeiro, a lista poe o mais novo na frente: o A* segue
+// fundo no caminho promissor antes de abrir outros com o mesmo f.
 static int prioridadeAEstrela(int g, int h) {
     return g + h;
 }
@@ -267,7 +242,7 @@ bool resolverAEstrela(const Tabuleiro &inicial, Solucao &s) {
     criarVetorNos(v);
     TabelaHash vistos;
     criarTabelaHash(vistos, TAMANHO_HASH_AESTRELA);
-    ListaOrdenada abertos;                   // estados descobertos e ainda nao expandidos
+    ListaOrdenada abertos;                   // descobertos e ainda nao expandidos
     criarLista(abertos);
 
     int raiz = adicionarNo(v, codificar(t), 0, -1, 0);
@@ -278,8 +253,8 @@ bool resolverAEstrela(const Tabuleiro &inicial, Solucao &s) {
     int prioridade, atual;
     while (!achou && v.quantidade < LIMITE_NOS_AESTRELA
            && removerPrimeiro(abertos, prioridade, atual)) {
-        // O mesmo no pode estar na lista mais de uma vez (quando achamos um
-        // caminho mais curto ate ele). Se ja foi expandido, ignora a copia velha.
+        // Um no pode entrar mais de uma vez na lista (quando aparece um caminho
+        // mais curto ate ele). Se ja foi expandido, esta copia e velha.
         if (v.nos[atual].fechado) {
             continue;
         }
@@ -298,8 +273,7 @@ bool resolverAEstrela(const Tabuleiro &inicial, Solucao &s) {
                 unsigned long long codigo = codificar(t);
                 int indice;
                 if (buscarHash(vistos, codigo, indice)) {
-                    // Ja conhecido: so atualiza se achamos um caminho MAIS CURTO
-                    // e ele ainda nao foi expandido.
+                    // Ja conhecido: atualiza so se o caminho novo for mais curto.
                     if (!v.nos[indice].fechado && gNovo < v.nos[indice].g) {
                         v.nos[indice].g = gNovo;
                         v.nos[indice].pai = atual;
@@ -325,22 +299,14 @@ bool resolverAEstrela(const Tabuleiro &inicial, Solucao &s) {
     return achou;
 }
 
-// =========================================================================
-// Estrategia por camadas (N = 5 e 6)
-// =========================================================================
-// Igual a uma pessoa resolvendo: arruma a LINHA DE CIMA, depois a COLUNA DA
-// ESQUERDA, e as casas arrumadas ficam TRAVADAS (nao mexemos mais nelas).
-// Sobra um tabuleiro menor no canto de baixo/direita, e repetimos ate sobrar
-// um quadrado 2x2, que e resolvido por ultimo.
-//
-// Para encaixar cada peca usamos uma BFS "reduzida": o estado guarda so a
-// posicao do vazio e das pecas que estamos encaixando agora (1, 2 ou 3).
-// As outras pecas nao importam. Isso deixa a busca pequena e rapida.
-//
-// As duas ultimas pecas de cada linha (e de cada coluna) sao encaixadas
-// JUNTAS: tentar colocar uma de cada vez costuma tirar a outra do lugar.
+// ---------- Camadas (N = 5 e 6) ----------
+// Arruma a linha de cima e a coluna da esquerda e trava essas casas. Sobra um
+// tabuleiro menor; repete ate sobrar o 2x2 do canto, resolvido por ultimo.
+// Cada encaixe e uma BFS pequena cujo estado e so a posicao do vazio e das
+// 1 a 3 pecas sendo encaixadas; as outras pecas nao importam.
+// As duas ultimas pecas de cada linha/coluna vao juntas: uma de cada vez,
+// encaixar uma costuma tirar a outra do lugar.
 
-// Indice onde a peca de valor 'valor' esta agora.
 static int posicaoDaPeca(const Tabuleiro &t, int valor) {
     for (int i = 0; i < t.n * t.n; i++) {
         if (t.pecas[i] == valor) {
@@ -350,7 +316,7 @@ static int posicaoDaPeca(const Tabuleiro &t, int valor) {
     return -1;
 }
 
-// Codifica (vazio, posicoes das pecas) num numero, como "digitos" na base total.
+// Mesma ideia de codificar, mas so com (vazio, posicoes das pecas).
 static unsigned long long codificarReduzido(int vazio, const int pos[], int qtd, int total) {
     unsigned long long codigo = vazio;
     for (int i = 0; i < qtd; i++) {
@@ -367,9 +333,8 @@ static void decodificarReduzido(unsigned long long codigo, int &vazio, int pos[]
     vazio = (int)codigo;
 }
 
-// Encaixa as pecas de 'pecas' (1 a 3 valores) nos seus lugares finais, sem
-// passar o vazio pelas casas travadas. Aplica os movimentos no tabuleiro 't'
-// e acrescenta cada um em 's'. Devolve false se nao for possivel.
+// Leva as pecas ate seus lugares sem o vazio passar por casas travadas.
+// Aplica os movimentos em 't', acrescenta em 's' e devolve false se nao der.
 static bool encaixarPecas(Tabuleiro &t, const bool travada[], const int pecas[], int qtdPecas, Solucao &s) {
     int n = t.n;
     int total = n * n;
@@ -386,7 +351,7 @@ static bool encaixarPecas(Tabuleiro &t, const bool travada[], const int pecas[],
     Fila fila;
     criarFila(fila);
 
-    // Aqui o "movimento" guardado em cada no e a CASA para onde o vazio foi.
+    // Aqui o 'movimento' de cada no e a CASA para onde o vazio foi, nao a peca.
     int raiz = adicionarNo(v, codificarReduzido(t.vazio, posInicial, qtdPecas, total), 0, -1, 0);
     inserirHash(vistos, v.nos[raiz].codigo, raiz);
     enfileirar(fila, raiz);
@@ -407,7 +372,6 @@ static bool encaixarPecas(Tabuleiro &t, const bool travada[], const int pecas[],
         if (pronto) {
             final = atual;
         } else {
-            // Casas vizinhas do vazio (cima, baixo, esquerda, direita).
             int linha = vazio / n;
             int coluna = vazio % n;
             int vizinhos[4];
@@ -432,8 +396,8 @@ static bool encaixarPecas(Tabuleiro &t, const bool travada[], const int pecas[],
             for (int k = 0; k < qtdVizinhos; k++) {
                 int casa = vizinhos[k];
                 if (!travada[casa]) {
-                    // O vazio vai para 'casa'. Se uma das nossas pecas estava
-                    // la, ela vai para onde o vazio estava.
+                    // O vazio vai para 'casa'; se uma das pecas estava la, ela
+                    // vai para onde o vazio estava.
                     int novaPos[3];
                     for (int i = 0; i < qtdPecas; i++) {
                         if (pos[i] == casa) {
@@ -456,11 +420,10 @@ static bool encaixarPecas(Tabuleiro &t, const bool travada[], const int pecas[],
 
     bool ok = false;
     if (final != -1) {
-        // Sequencia de casas por onde o vazio passa (montada com a Pilha).
         Solucao casas;
         criarSolucao(casas);
         montarCaminho(v, final, casas);
-        // Traduz cada casa para o VALOR da peca que esta nela e aplica o movimento.
+        // Converte cada casa no valor da peca que esta nela.
         for (int i = 0; i < casas.quantidade; i++) {
             int valor = t.pecas[casas.movimentos[i]];
             aplicarMovimento(t, valor);
@@ -487,16 +450,16 @@ bool resolverCamadas(const Tabuleiro &inicial, Solucao &s) {
     }
 
     bool ok = true;
-    int k = 0;   // a parte que falta resolver comeca na linha k e na coluna k
+    int k = 0;   // a parte que falta comeca na linha k e na coluna k
     while (ok && n - k > 2) {
-        // 1) Linha de cima da parte que falta: casas (k, k) ate (k, n-1).
+        // Linha k: uma peca por vez, menos as duas ultimas.
         for (int c = k; c <= n - 3 && ok; c++) {
             int peca[1];
             peca[0] = k * n + c + 1;               // peca que mora na casa (k, c)
             ok = encaixarPecas(t, travada, peca, 1, s);
             travada[k * n + c] = true;
         }
-        if (ok) {                                   // as duas ultimas da linha, juntas
+        if (ok) {
             int par[2];
             par[0] = k * n + (n - 2) + 1;
             par[1] = k * n + (n - 1) + 1;
@@ -505,14 +468,14 @@ bool resolverCamadas(const Tabuleiro &inicial, Solucao &s) {
             travada[k * n + (n - 1)] = true;
         }
 
-        // 2) Coluna da esquerda da parte que falta: casas (k+1, k) ate (n-1, k).
+        // Coluna k: mesma ideia, de cima para baixo.
         for (int l = k + 1; l <= n - 3 && ok; l++) {
             int peca[1];
             peca[0] = l * n + k + 1;
             ok = encaixarPecas(t, travada, peca, 1, s);
             travada[l * n + k] = true;
         }
-        if (ok) {                                   // as duas ultimas da coluna, juntas
+        if (ok) {
             int par[2];
             par[0] = (n - 2) * n + k + 1;
             par[1] = (n - 1) * n + k + 1;
@@ -523,8 +486,7 @@ bool resolverCamadas(const Tabuleiro &inicial, Solucao &s) {
         k++;
     }
 
-    // 3) Sobrou o quadrado 2x2 do canto: encaixa as 3 pecas finais juntas
-    //    (o vazio termina sozinho no canto inferior direito).
+    // 2x2 final: encaixa as 3 pecas juntas; o vazio acaba sozinho no canto.
     if (ok) {
         int ultimas[3];
         ultimas[0] = (n - 2) * n + (n - 2) + 1;
@@ -542,9 +504,7 @@ bool resolverCamadas(const Tabuleiro &inicial, Solucao &s) {
     return ok;
 }
 
-// =========================================================================
-// Escolha da estrategia
-// =========================================================================
+// ---------- Escolha da estrategia ----------
 
 int resolver(const Tabuleiro &t, Solucao &s) {
     if (t.n <= 3) {
@@ -557,8 +517,7 @@ int resolver(const Tabuleiro &t, Solucao &s) {
         if (resolverAEstrela(t, s)) {
             return ESTRATEGIA_AESTRELA;
         }
-        // O A* desistiu (limite de estados): descarta o que tiver ficado
-        // em 's' e tenta pela estrategia por camadas.
+        // A* estourou o limite: limpa 's' e tenta por camadas.
         liberarSolucao(s);
         criarSolucao(s);
     }

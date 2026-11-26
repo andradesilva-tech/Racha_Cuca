@@ -1,18 +1,13 @@
-// testes.cpp
-// Testes da Etapa 1: estado do tabuleiro e validade dos movimentos no centro,
-// nas bordas e nos cantos. Nao usa biblioteca de testes: conta as verificacoes
-// e as falhas e devolve codigo de saida diferente de zero se algo falhar
-// (assim o 'ctest' do CMake tambem percebe o erro).
+// Testes do Tabuleiro: movimentos no centro, bordas e cantos, e embaralhar.
+// Sai com codigo 1 se algo falhar, para o ctest perceber.
 #include "Tabuleiro.h"
 #include <iostream>
 #include <cstdlib>
 using namespace std;
 
-// Contadores globais do resultado dos testes.
 int totalVerificacoes = 0;
 int totalFalhas = 0;
 
-// Registra uma verificacao: se a condicao for falsa, conta como falha e avisa.
 void verificar(bool condicao, const char *descricao) {
     totalVerificacoes++;
     if (!condicao) {
@@ -21,7 +16,6 @@ void verificar(bool condicao, const char *descricao) {
     }
 }
 
-// Diz se o valor x aparece no vetor v de tamanho qtd.
 bool contem(int v[], int qtd, int x) {
     for (int i = 0; i < qtd; i++) {
         if (v[i] == x) {
@@ -31,7 +25,6 @@ bool contem(int v[], int qtd, int x) {
     return false;
 }
 
-// Diz se dois tabuleiros tem exatamente o mesmo estado.
 bool estadosIguais(const Tabuleiro &a, const Tabuleiro &b) {
     if (a.n != b.n) {
         return false;
@@ -143,7 +136,7 @@ void testeAplicarMovimento() {
     verificar(pecaEm(t, 1, 1) == 7, "a peca 7 deve estar no centro agora");
     verificar(pecaEm(t, 2, 1) == VAZIO, "o lugar antigo da 7 deve ficar vazio");
 
-    // Guarda o estado atual para conferir que um movimento invalido nao muda nada.
+    // Movimento invalido nao pode mudar nada.
     Tabuleiro copia;
     criarTabuleiroComEstado(copia, 3, t.pecas);
     verificar(!aplicarMovimento(t, 2), "peca 2 nao e vizinha do vazio: deve falhar");
@@ -154,7 +147,7 @@ void testeAplicarMovimento() {
     destruirTabuleiro(copia);
     destruirTabuleiro(t);
 
-    // Um movimento seguido do seu inverso volta ao estado original.
+    // Mover a mesma peca duas vezes volta ao estado original.
     Tabuleiro u;
     criarTabuleiro(u, 3);
     Tabuleiro original;
@@ -168,10 +161,7 @@ void testeAplicarMovimento() {
     destruirTabuleiro(u);
 }
 
-// Confere se o tabuleiro e uma configuracao "legal": cada valor de 0 a n*n-1
-// aparece exatamente uma vez (ou seja, todas as pecas, exceto a retirada,
-// aparecem uma unica vez e ha um unico espaco vazio), e o campo 'vazio'
-// aponta mesmo para o espaco vazio.
+// Cada valor de 0 a n*n-1 aparece uma unica vez e 'vazio' aponta para o 0.
 bool configuracaoValida(const Tabuleiro &t) {
     int total = t.n * t.n;
     int *contagem = new int[total];
@@ -182,14 +172,14 @@ bool configuracaoValida(const Tabuleiro &t) {
     for (int i = 0; i < total; i++) {
         int v = t.pecas[i];
         if (v < 0 || v >= total) {
-            ok = false;                // valor fora do esperado
+            ok = false;
         } else {
             contagem[v]++;
         }
     }
     for (int v = 0; v < total; v++) {
         if (contagem[v] != 1) {
-            ok = false;                // faltou ou repetiu algum valor
+            ok = false;
         }
     }
     if (t.pecas[t.vazio] != VAZIO) {
@@ -219,8 +209,7 @@ void testeEmbaralhar() {
     verificar(!estaResolvido(r), "e termina fora do estado resolvido");
     destruirTabuleiro(r);
 
-    // No 2x2 o vazio so tem 2 vizinhos; sem desfazer, sobra 1 opcao por vez.
-    // Repetir varias vezes garante que nunca trava nem fica resolvido.
+    // No 2x2 sobra so 1 opcao por vez: confere que nunca trava.
     for (int vez = 0; vez < 20; vez++) {
         Tabuleiro p;
         criarTabuleiro(p, 2);
@@ -233,7 +222,7 @@ void testeEmbaralhar() {
 
 int main() {
     cout << "Executando testes do Tabuleiro (movimentos e embaralhar)\n\n";
-    srand(12345);   // semente fixa: os testes sorteiam sempre a mesma coisa
+    srand(12345);   // semente fixa: resultado igual em toda execucao
 
     testeEstadoResolvido();
     testeMovimentoCentro();
